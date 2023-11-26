@@ -35,8 +35,18 @@
 <body>
     <div id="gameBoard"></div>
     <div id="currentPlayer">Текущий игрок: 1</div>
-    <button id="startGameBtn">Начать игру</button>
-    <button id="joinGameBtn">Присоединиться к игре</button>
+    <div id="loginForm">
+        <form id="loginForm">
+          <label for="username">Логин:</label>
+          <input type="text" id="username" name="username" required>
+          <label for="password">Пароль:</label>
+          <input type="password" id="password" name="password" required>
+          <button type="button" id="loginBtn">Войти</button>
+        </form>
+      </div>
+      <button id="startGameBtn" >Начать игру</button>
+      <button id="joinGameBtn" >Присоединиться к игре</button>
+      
     <script src="/socket.io/socket.io.js"></script>
     <script src="client.js"></script>
 </body>

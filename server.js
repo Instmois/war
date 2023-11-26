@@ -2,6 +2,10 @@ const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
 const { Pool } = require('pg');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const session = require('express-session');
+const bcrypt = require('bcrypt');
 require('dotenv').config();
 
 const app = express();
@@ -30,8 +34,51 @@ pool.query('SELECT $1 AS value', [123])
     process.exit(1); 
   });
 
+app.use(session({ secret: 'your-secret-key', resave: true, saveUninitialized: true }));
+app.use(passport.initialize());
+app.use(passport.session());
 app.use('/socket.io', express.static('node_modules/socket.io-client/dist'));
 app.use(express.static('public'));
+
+const users = [
+  { id: 1, username: 'admin', password: '$2b$10$1R5sd8UuOy0tW1eyzgT.WuzrXyOgs2WwvG0esJxc/pbP7JiPiSf5S' } // Пароль: admin
+];
+passport.use(new LocalStrategy(
+  (username, password, done) => {
+    const user = users.find(u => u.username === username);
+    if (!user) {
+      return done(null, false, { message: 'Incorrect username.' });
+    }
+    if (!bcrypt.compareSync(password, user.password)) {
+      return done(null, false, { message: 'Incorrect password.' });
+    }
+    return done(null, user);
+  }
+));
+
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser((id, done) => {
+  const user = users.find(u => u.id === id);
+  done(null, user);
+});
+app.post('/login', (req, res, next) => {
+  passport.authenticate('local', (err, user) => {
+    if (err) { return next(err); }
+    if (!user) { return res.json({ success: false }); }
+
+    req.login(user, (err) => {
+      if (err) { return next(err); }
+      return res.json({ success: true });
+    });
+  })(req, res, next);
+});
+
+
+const connectedPlayers = {};
+
 // Состояние игры
 function initializeGameBoard() {
     const gameState = {
@@ -178,8 +225,15 @@ io.on('connection', (socket) => {
     console.log('Пользователь подключен:', socket.id);
     let gameState = initializeGameBoard();
     let gameStarted = false;
+    socket.on('login', (username) => {
+      console.log(`${username} авторизован.`);
+      connectedPlayers[socket.id] = { username, inGame: false };
+    });
     socket.on('startGame', () => {
         if (!gameStarted) {
+          if (connectedPlayers[socket.id] && !connectedPlayers[socket.id].inGame) {
+            connectedPlayers[socket.id].inGame = true;
+          }
             gameStarted = true;
             gameState = initializeGameBoard();
             io.emit('gameState', gameState);
@@ -188,6 +242,9 @@ io.on('connection', (socket) => {
     
     socket.on('joinGame', () => {
         if (!gameStarted) {
+          if (connectedPlayers[socket.id] && !connectedPlayers[socket.id].inGame) {
+            connectedPlayers[socket.id].inGame = true;
+          }
             gameStarted = true;
             gameState = initializeGameBoard();
             io.emit('gameState', gameState);
@@ -226,6 +283,12 @@ io.on('connection', (socket) => {
     });
     socket.emit('gameState', gameState);
     socket.on('disconnect', () => {
+      if (connectedPlayers[socket.id] && connectedPlayers[socket.id].username) {
+        console.log(`${connectedPlayers[socket.id].username} отключен. ID: ${socket.id}`);
+      } else {
+        console.log(`Пользователь с ID ${socket.id} отключен.`);
+      }
+      delete connectedPlayers[socket.id];
       console.log('Пользователь отключен:', socket.id);
     });
   });
