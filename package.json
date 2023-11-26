@@ -1,0 +1,19 @@
+{
+  "name": "war",
+  "version": "1.0.0",
+  "description": "Веб-приложение \"Война вирусов\"",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Instmois/war_virus.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Instmois/war_virus/issues"
+  },
+  "homepage": "https://github.com/Instmois/war_virus#readme"
+}
