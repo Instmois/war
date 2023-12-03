@@ -1,53 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Война вирусов</title>
-    <style>
-        #gameBoard {
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            width: 100px;
-            margin-top: 20px;
-        }
-
-        .cell {
-            width: 40px;
-            height: 40px;
-            border: 1px solid #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            cursor: pointer;
-        }
-        .cell.killed {
-            background-color: #eee; /* Цвет фона для убитых символов */
-             color: #999; /* Цвет текста для убитых символов */
-        }
-
-        #currentPlayer {
-            margin-top: 10px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Virus War Game</title>
 </head>
 <body>
-    <div id="gameBoard"></div>
-    <div id="currentPlayer">Текущий игрок: 1</div>
-    <div id="loginForm">
-        <form id="loginForm">
-          <label for="username">Логин:</label>
-          <input type="text" id="username" name="username" required>
-          <label for="password">Пароль:</label>
-          <input type="password" id="password" name="password" required>
-          <button type="button" id="loginBtn">Войти</button>
-        </form>
-      </div>
-      <button id="startGameBtn" >Начать игру</button>
-      <button id="joinGameBtn" >Присоединиться к игре</button>
-      
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="client.js"></script>
+  <button id ="createGameBtn">Create Game</button>
+  <button onclick="joinGame()" id ="joinBtn">Join Game</button>
+  <div id="gameBoard" style="display: none;"> 
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.0/socket.io.js"></script>
+  <script src="client.js"></script>
 </body>
 </html>

@@ -1,133 +1,51 @@
 document.addEventListener('DOMContentLoaded', function () {
-    console.log('Сценарий client.js запущен');
+  // Оборачиваем код в самовызывающуюся функцию, чтобы избежать конфликтов с глобальной областью видимости
+  (function () {
+    // Инициализируем сокет и объявляем функции внутри этой функции
     const socket = io();
-    function login() {
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
-    
-        // Отправить запрос на сервер для авторизации
-        socket.emit('login', { username, password }, (response) => {
-          if (response.success) {
-            // Авторизация успешна, скрываем форму входа и показываем кнопки начала игры
-            document.getElementById('loginForm').style.display = 'none';
-            document.getElementById('startGameBtn').style.display = 'block';
-            document.getElementById('joinGameBtn').style.display = 'block';
-          } else {
-            // Вывести сообщение об ошибке
-            alert('Ошибка входа. Проверьте логин и пароль.');
-          }
-        });
-      }
-    // Функция для логирования сообщений об ошибках на стороне клиента
-    function clientLogger(...messages) {
-        console.error(...messages);
+    const createGameBtn = document.getElementById('createGameBtn');
+    const joinBtn = document.getElementById("joinBtn")
+    const gameBoard = document.getElementById('gameBoard');
+    // Присваиваем функции к объекту window, чтобы они были доступны в глобальной области видимости
+    window.createGame = function () {
+      socket.emit('createGame');
+    };
+    createGameBtn.addEventListener('click', () => {
+      // Отправляем на сервер запрос на создание игры и передаем userId
+      socket.emit('createGame', { userId: socket.id });
+    });
+    window.joinGame = function () {
+      const gameId = prompt('Enter the game ID:');
+      socket.emit('joinGame', {gameId, userId: socket.id});
+    };
+
+    // Обработка событий от сервера
+    socket.on('gameCreated', (gameId) => {
+      console.log(`Game created with ID: ${gameId}`);
+      const gameId_alert = alert('Game created with ID ' + gameId);
+      
+    });
+
+    socket.on('gameStarted', ({ userId, games }) => {
+      console.log('Game started!');
+      console.log('User ID:', userId);
+      console.log('Hiding buttons and showing game board...');
+      createGameBtn.style.display = 'none';
+      joinBtn.style.display = 'none';
+      gameBoard.style.display = 'block';
+      showGameBoard();
+    });
+
+    socket.on('gameNotFound', () => {
+      alert('Game not found. Please enter a valid game ID.');
+    });
+    socket.on('notTwoPeople', () => {
+      alert('Please, waiting for player 2');
+    });
+    function showGameBoard() {
+      // Реализуйте логику для отображения игрового поля (например, скрытие кнопок и показ игрового поля)
+      console.log('Game board displayed. Waiting for Player 2...');
     }
-    socket.on('connect', () => {
-        console.log('Успешное подключение к серверу Socket.IO');
-        
-    });
-
-    // Обработка ошибок на стороне клиента
-    socket.on('error', (error) => {
-        clientLogger('Произошла ошибка на стороне клиента:', error);
-    });
-
-    socket.on('connect_error', (error) => {
-        clientLogger('Ошибка подключения к серверу:', error);
-    });
-
-    socket.on('connect_timeout', (timeout) => {
-        clientLogger('Превышено время ожидания подключения:', timeout);
-    });
-    socket.on('testMessage', (message) => {
-        console.log('Получено тестовое сообщение с сервера:', message);
-    });
-    
-    socket.on('gameState', (gameState) => {
-        console.log('Получено состояние игры с сервера:', gameState);
-        updateGameInterface(gameState);
-    });
-    
-    function clearGameBoard() {
-        const cells = document.querySelectorAll('.cell');
-        cells.forEach((cell) => {
-        cell.textContent = '';
-        cell.classList.remove('killed');
-        });
-    }
-    function updateGameInterface(gameState) {
-        console.log('Обновление интерфейса:', gameState);
-        // Логика обновления интерфейса игры
-        // Например, обновление отображения игрового поля, текущего игрока и т.д.
-        clearGameBoard();
-        // Пример: обновление поля игры
-        updateGameBoard(gameState.board);
-
-        // Пример: обновление текущего игрока
-        updateCurrentPlayer(gameState.currentPlayer);
-    }
-
-    // Изменения в updateGameBoard
-    // Внесем изменения в updateGameBoard
-    function updateGameBoard(board) {
-        const gameBoardElement = document.getElementById('gameBoard');
-
-        // Проверяем наличие gameBoardElement и создаем, если не существует
-        if (!gameBoardElement) {
-            console.error('Элемент gameBoard не найден.');
-            return;
-        }
-
-        // Очищаем содержимое gameBoardElement перед обновлением
-        gameBoardElement.innerHTML = '';
-
-        for (let row = 0; row < board.length; row++) {
-            for (let col = 0; col < board[row].length; col++) {
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-
-                // Обновление текста и стилей клетки в соответствии с состоянием игры
-                cell.textContent = board[row][col];
-                if (board[row][col] === 'K') {
-                    cell.classList.add('killed');
-                }
-
-                // Добавляем обработчик события клика на клетку
-                cell.addEventListener('click', () => {
-                    // Отправка события на сервер о ходе игрока
-                    console.log(`Clicked on cell (${row}, ${col})`);
-                    socket.emit('playerMove', { row, col, type: 'spawn' });
-                });
-
-                // Добавляем созданную клетку в gameBoardElement
-                gameBoardElement.appendChild(cell);
-            }
-        }
-    }
-
-    function updateCurrentPlayer(currentPlayer) {
-        const currentPlayerElement = document.getElementById('currentPlayer');
-
-        // Обновление текста в элементе
-        currentPlayerElement.textContent = `Текущий игрок: ${currentPlayer}`;
-    }
-    const startGameBtn = document.getElementById('startGameBtn');
-
-    startGameBtn.addEventListener('click', () => {
-        // Отправить событие на сервер о начале игры
-        socket.emit('startGame');
-    });
-
-    const joinGameBtn = document.getElementById('joinGameBtn');
-
-    joinGameBtn.addEventListener('click', () => {
-        // Отправить событие на сервер о присоединении ко второй игре
-        socket.emit('joinGame');
-    }); 
-    const loginBtn = document.getElementById('loginBtn');
-    if (loginBtn) {
-      loginBtn.addEventListener('click', login);
-    }
+  })();
 });
 
-  
