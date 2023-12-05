@@ -44,14 +44,22 @@ document.addEventListener('DOMContentLoaded', function () {
     });
    
 
-    socket.on('updateBoard', ({ row, col, symbol }) => {
+    socket.on('updateBoard', ({ row, col, cellValue }) => {
       // Обновляем интерфейс на основе данных о ходе от сервера
       const cellElement = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
       
-      if (symbol === 'cross') {
+      if (cellValue === 'cross') {
         cellElement.innerHTML = 'X'; // Ваш символ для крестика
-      } else {
+      } else if(cellValue === 'circle'){
         cellElement.innerHTML = 'O'; // Ваш символ для нолика
+      }
+      else if(cellValue === 'killed-cross'){
+        cellElement.innerHTML = 'X';
+        cellElement.setAttribute('id','killed-cross');
+      }
+      else if(cellValue === 'killed-circle'){
+        cellElement.innerHTML = 'O';
+        cellElement.setAttribute('id','killed-circle');
       }
     });
 

@@ -14,4 +14,10 @@
     justify-content: center;
     font-size: 18px; 
   }
-  
+#killed-circle {
+    background-color: red; 
+}
+
+#killed-cross {
+    background-color: blue; 
+}
