@@ -1,65 +1,87 @@
 document.addEventListener('DOMContentLoaded', function () {
-  // Оборачиваем код в самовызывающуюся функцию, чтобы избежать конфликтов с глобальной областью видимости
-  (function () {
-    // Инициализируем сокет и объявляем функции внутри этой функции
     const socket = io();
     const createGameBtn = document.getElementById('createGameBtn');
     const joinBtn = document.getElementById("joinBtn")
     const gameBoard = document.getElementById('gameBoard');
-    // Присваиваем функции к объекту window, чтобы они были доступны в глобальной области видимости
-    window.createGame = function () {
-      socket.emit('createGame');
-    };
+    const showtable = document.getElementById('showTableButton');
+    const table = document.getElementById('tableContainer');
     createGameBtn.addEventListener('click', () => {
-      // Отправляем на сервер запрос на создание игры и передаем userId
       socket.emit('createGame', { userId: socket.id });
     });
-    window.joinGame = function () {
-      const gameId = prompt('Enter the game ID:');
-      socket.emit('joinGame', {gameId, userId: socket.id});
-    };
 
-    // Обработка событий от сервера
+    joinBtn.addEventListener('click', () => {
+      const gameId = prompt('Enter the game ID:');
+      socket.emit('joinGame', { gameId, userId: socket.id });
+    });
+
     socket.on('gameCreated', (gameId) => {
       console.log(`Game created with ID: ${gameId}`);
-      const gameId_alert = alert('Game created with ID ' + gameId);
-      
+      alert('Game created with ID ' + gameId);
+    });
+
+    showtable.addEventListener('click', () => {
+      socket.emit('showTable');
     });
 
     socket.on('gameStarted', ({ userId, games, GameBoard }) => {
       console.log('Game started!');
       console.log('User ID:', userId);
-      console.log('Hiding buttons and showing game board...');
       showGameBoard(games);
     });
 
+    socket.on('tableData', function (data) {
+      const tables = document.createElement('table');
+      tables.classList.add('table');
+      const headerRow = document.createElement('tr');
+      Object.keys(data[0]).forEach(function (key) {
+          const th = document.createElement('th');
+          th.textContent = key;
+          headerRow.appendChild(th);
+      });
+      tables.appendChild(headerRow);
+      data.forEach(function (row) {
+          const dataRow = document.createElement('tr');
+          Object.values(row).forEach(function (value) {
+              const td = document.createElement('td');
+              td.textContent = value;
+              dataRow.appendChild(td);
+          });
+          tables.appendChild(dataRow);
+      });
+      
+      table.appendChild(tables);
+  });
     socket.on('gameNotFound', () => {
-      alert('Game not found. Please enter a valid game ID.');
+      alert('Игра не найдена!');
     });
     socket.on('notTwoPeople', () => {
-      alert('Please, waiting for player 2');
+      alert('Дождитесь 2-го игрока!');
     });
     socket.on('CellNotAvailable', () => {
       alert('Выбранная клетка недоступна. Попробуйте другую.');
     });
-   
-
+    
+    socket.on('EndMovePlayer', () => {
+      alert('Не ваш ход.');
+    });
+    socket.on('gameWon', (data) => {
+      alert('Победил : ' + data.winner + ' !!!');
+    });
+    socket.on('gameDraw', () => {
+      alert('Победила ничья!');
+    });
     socket.on('updateBoard', ({ row, col, cellValue }) => {
-      // Обновляем интерфейс на основе данных о ходе от сервера
       const cellElement = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-      
       if (cellValue === 'cross') {
-        cellElement.innerHTML = 'X'; // Ваш символ для крестика
-      } else if(cellValue === 'circle'){
-        cellElement.innerHTML = 'O'; // Ваш символ для нолика
+        cellElement.innerHTML = 'X'; 
+      } else if (cellValue === 'circle') {
+        cellElement.innerHTML = 'O'; 
       }
-      else if(cellValue === 'killed-cross'){
-        cellElement.innerHTML = 'X';
-        cellElement.setAttribute('id','killed-cross');
+      else if (cellValue === 'killed-cross') {
+        cellElement.setAttribute('id', 'killed-cross');
       }
-      else if(cellValue === 'killed-circle'){
-        cellElement.innerHTML = 'O';
-        cellElement.setAttribute('id','killed-circle');
+      else if (cellValue === 'killed-circle') {
+        cellElement.setAttribute('id', 'killed-circle');
       }
     });
 
@@ -67,7 +89,8 @@ document.addEventListener('DOMContentLoaded', function () {
       createGameBtn.style.display = 'none';
       joinBtn.style.display = 'none';
       gameBoard.style.display = 'grid';
-      
+      showtable.style.display  = 'none';
+      table.style.display = 'none';
       for (let i = 0; i < 10; i++) {
         for (let j = 0; j < 10; j++) {
           const cell = document.createElement('div');
@@ -78,34 +101,11 @@ document.addEventListener('DOMContentLoaded', function () {
           gameBoard.appendChild(cell);
         }
       }
-      
-      console.log('Game board displayed. Waiting for Player 2...');
-    
+
       function onCellClick(row, col) {
         const symbol = (games[0].players[0] === socket.id) ? 'cross' : 'circle';
-    
-        // Отправляем информацию на сервер о намерении сделать ход
         socket.emit('makeMoveRequest', { row, col, symbol });
       }
     }
-    /*
-      function onCellClick(row, col, GameBoard) {
-        const symbol = (games[0].players[0] === socket.id) ? 'cross' : 'circle';
-  
-        if (GameBoard.isCellAvailable(row, col, symbol)) {
-          // Если клетка доступна, делаем ход
-          GameBoard.makeMove(row, col, symbol);
-          GameBoard.printBoard();
-          // Дополнительная логика для отправки информации на сервер
-          socket.emit('makeMove', { row, col, symbol });
-          
-        } else {
-          alert('Выбранная клетка недоступна. Попробуйте другую.');
-        }
-        console.log(`Нажатие на ячейку (${row}, ${col})`);
-      }
-    }*/
-
-  })();
 });
 

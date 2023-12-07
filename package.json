@@ -24,6 +24,7 @@
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
     "pg": "^8.11.3",
+    "pg-promise": "^11.5.4",
     "sequelize": "^6.35.1",
     "socket.io": "^4.7.2"
   }
